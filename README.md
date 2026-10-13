@@ -1,123 +1,53 @@
-# Réseau de Neurones From Scratch en C++
+# XOR-NeuralNetwork-CPP
 
-Ce projet implémente un réseau de neurones multicouche from scratch en C++ pour résoudre le problème du XOR. L'implémentation n'utilise aucune bibliothèque externe de machine learning, seulement les bibliothèques standards C++.
+A small multi-layer perceptron written from scratch in C++ (standard library only) and trained with backpropagation to learn XOR.
 
-## 🧠 Concept et Architecture
+I wrote it to understand what happens inside a neural network without a framework doing the work.
 
-Le réseau est composé de :
-- Couche d'entrée : 2 neurones (pour les 2 entrées du XOR)
-- Couche cachée : 4 neurones
-- Couche de sortie : 1 neurone
+## Network
 
-### Problème du XOR
+- architecture `2 → 4 → 1`, fully connected
+- `tanh` activation, weights and biases initialised uniformly in [-1, 1]
+- plain gradient descent on the four XOR samples, 10,000 epochs, learning rate 0.1
+- the average error is printed every 1,000 epochs
 
-Le XOR (OU exclusif) est un problème classique non linéairement séparable :
+XOR is the classic example of a problem that is not linearly separable, so it needs at least one hidden layer:
+
 ```
-Entrée1  Entrée2  |  Sortie
-   0       0      |    0
-   0       1      |    1
-   1       0      |    1
-   1       1      |    0
-```
-
-## 🔍 Détails Techniques
-
-### Fonction d'Activation
-
-Initialement, la sigmoïde était utilisée comme fonction d'activation :
-```cpp
-double activate(double x) {
-    return 1.0 / (1.0 + exp(-x)); // Sortie entre [0, 1]
-}
+x1  x2 | y
+ 0   0 | 0
+ 0   1 | 1
+ 1   0 | 1
+ 1   1 | 0
 ```
 
-Problème rencontré : La sigmoïde n'était pas adaptée car :
-- Elle est centrée autour de 0.5 et non de 0
-- Sa plage de sortie [0, 1] n'est pas optimale pour le XOR
-- Les gradients sont plus faibles que tanh
+## Notes
 
-Solution : Utilisation de tanh :
-```cpp
-double activate(double x) {
-    return tanh(x); // Sortie entre [-1, 1]
-}
-```
+I started with a sigmoid activation and switched to `tanh`. Because it is centred on zero and has larger gradients, training converged more reliably on this problem.
 
-Avantages de tanh :
-- Centrée en 0
-- Plage de sortie [-1, 1]
-- Gradients plus forts
-- Meilleure convergence pour ce type de problème
+Backpropagation uses the usual deltas:
 
-### Backpropagation
+- output layer: `δ = (target − output) · f'(z)`
+- hidden layers: `δ = (Σ δ_next · w) · f'(z)`
+- update: `w ← w + η · δ · input`
 
-La backpropagation utilise le concept de delta (δ) :
-- Pour la couche de sortie : δ = (target - output) * f'(x)
-- Pour les couches cachées : δ = (Σ δ_suivant * w) * f'(x)
-
-Les poids sont mis à jour selon la règle :
-```cpp
-w_new = w_old + learning_rate * delta * input
-```
-
-## 💻 Avantages du C++
-
-1. Performance :
-   - Exécution plus rapide que Python
-   - Gestion directe de la mémoire
-   - Pas d'overhead d'interpréteur
-
-2. Possibilités d'Optimisation :
-   - Parallélisation possible avec OpenMP ou std::thread
-   - Vectorisation des calculs
-   - Cache-friendly data structures
-
-3. Contrôle Total :
-   - Pas de magie noire des frameworks
-   - Compréhension complète du fonctionnement
-   - Personnalisation totale possible
-
-## 🚀 Améliorations Possibles
-
-1. Parallélisation :
-   - Paralléliser le calcul des neurones dans chaque couche
-   - Paralléliser le traitement des batchs pendant l'entraînement
-   - Utiliser OpenMP pour une implémentation simple :
-   ```cpp
-   #pragma omp parallel for
-   for (size_t i = 0; i < neurons.size(); i++) {
-       // calculs des neurones
-   }
-   ```
-
-2. Optimisations :
-   - Utilisation de SIMD pour les opérations vectorielles
-   - Batch training pour améliorer la convergence
-   - Mini-batch stochastic gradient descent
-
-## 📈 Résultats
-
-Après entraînement, le réseau atteint une précision excellente :
-```
-Entrée: 0 0 - Sortie: 0.000309991 - Attendu: 0
-Entrée: 0 1 - Sortie: 0.999058 - Attendu: 1
-Entrée: 1 0 - Sortie: 0.999065 - Attendu: 1
-Entrée: 1 1 - Sortie: -0.000622462 - Attendu: 0
-```
-
-## 🛠 Compilation et Utilisation
+## Build and run
 
 ```bash
-g++ -std=c++11 neural_network.cpp -o neural_network
-./neural_network
+g++ -std=c++11 -O2 neural-net.cpp -o neural-net
+./neural-net
 ```
 
-Pour activer les optimisations :
-```bash
-g++ -std=c++11 -O3 neural_network.cpp -o neural_network
+## Result
+
+```
+input 0 0 → 0.0003   (expected 0)
+input 0 1 → 0.9991   (expected 1)
+input 1 0 → 0.9991   (expected 1)
+input 1 1 → -0.0006  (expected 0)
 ```
 
-Pour la parallélisation avec OpenMP :
-```bash
-g++ -std=c++11 -fopenmp neural_network.cpp -o neural_network
-```
+## Possible next steps
+
+- parallelise the per-neuron computations with OpenMP
+- mini-batch training and a real dataset (e.g. MNIST)
